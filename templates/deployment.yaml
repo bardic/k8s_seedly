@@ -1,0 +1,265 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "seedly.fullname" . }}
+  labels:
+    {{- include "seedly.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "seedly.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "seedly.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "seedly.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: "plex"
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.plex.repository }}:{{ .Values.plex.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.plex.pullPolicy }}
+          ports:
+          - containerPort: 22
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          env:
+          - name: DEBIAN_FRONTEND
+            value: noninteractive
+          - name: HOME
+            value: /root
+          - name: LANG
+            value: en_US.UTF-8
+          - name: LANGUAGE
+            value: en_US.UTF-8
+          - name: LSIO_FIRST_PARTY
+            value: "true"
+          - name: NVIDIA_DRIVER_CAPABILITIES
+            value: compute,video,utility
+          - name: PATH
+            value: /lsiopy/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+          - name: PGID
+            value: "100"
+          - name: PLEX_ARCH
+            value: amd64
+          - name: PLEX_DOWNLOAD
+            value: https://downloads.plex.tv/plex-media-server-new
+          - name: PLEX_MEDIA_SERVER_APPLICATION_SUPPORT_DIR
+            value: /config/Library/Application Support
+          - name: PLEX_MEDIA_SERVER_HOME
+            value: /usr/lib/plexmediaserver
+          - name: PLEX_MEDIA_SERVER_INFO_DEVICE
+            value: Docker Container (LinuxServer.io)
+          - name: PLEX_MEDIA_SERVER_INFO_VENDOR
+            value: Docker
+          - name: PLEX_MEDIA_SERVER_MAX_PLUGIN_PROCS
+            value: "6"
+          - name: PLEX_MEDIA_SERVER_USER
+            value: abc
+          - name: PUID
+            value: "1000"
+          - name: S6_CMD_WAIT_FOR_SERVICES_MAXTIME
+            value: "0"
+          - name: S6_STAGE2_HOOK
+            value: /docker-mods
+          - name: S6_VERBOSITY
+            value: "1"
+          - name: TERM
+            value: xterm
+          - name: VERSION
+            value: latest
+          - name: VIRTUAL_ENV
+            value: /lsiopy
+          volumeMounts:
+          - name: plex-config
+            mountPath: /config
+          - name: movies
+            mountPath: /movies
+          - name: tv
+            mountPath: /tv
+        - name: "rtorrent"
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.rtorrent.repository }}:{{ .Values.rtorrent.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.rtorrent.pullPolicy }}
+          ports:
+          - containerPort: 22
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          env:
+          - name: MAX_FILE_UPLOADS
+            value: "50"
+          - name: PATH
+            value: /usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+          - name: PGID
+            value: "1000"
+          - name: PUID
+            value: "1000"
+          - name: PYTHONPATH
+            value: :/var/www/rutorrent
+          - name: RT_LOG_LEVEL
+            value: info
+          - name: RU_REMOVE_CORE_PLUGINS
+            value: erasedata,httprpc
+          - name: S6_BEHAVIOUR_IF_STAGE2_FAILS
+            value: "2"
+          - name: S6_KILL_GRACETIME
+            value: "10000"
+          - name: TZ
+            value: America/Halifax
+          volumeMounts:
+          - name: rutorrent-config
+            mountPath: /config
+          - name: data
+            mountPath: /data
+          - name: downloads
+            mountPath: /downloads 
+          - name: passwd
+            mountPath: /passwd
+        - name: "radarr"
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.radarr.repository }}:{{ .Values.radarr.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.radarr.pullPolicy }}
+          ports:
+          - containerPort: 22
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          env:
+          - name: HOME
+            value: /root
+          - name: LSIO_FIRST_PARTY
+            value: "true"
+          - name: PATH
+            value: /lsiopy/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+          - name: PGID
+            value: "100"
+          - name: PS1
+            value: $(whoami)@$(hostname):$(pwd)\$
+          - name: PUID
+            value: "1000"
+          - name: S6_CMD_WAIT_FOR_SERVICES_MAXTIME
+            value: "0"
+          - name: S6_STAGE2_HOOK
+            value: /docker-mods
+          - name: S6_VERBOSITY
+            value: "1"
+          - name: TERM
+            value: xterm
+          - name: VIRTUAL_ENV
+            value: /lsiopy
+          - name: XDG_CONFIG_HOME
+            value: /config/xdg
+          volumeMounts:
+          - name: radarr-config
+            mountPath: /config
+          - name: downloads
+            mountPath: /downloads
+          - name: movies
+            mountPath: /movies
+        - name: "sickchill"
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.sickchill.repository }}:{{ .Values.sickchill.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.sickchill.pullPolicy }}
+          ports:
+          - containerPort: 22
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          env:
+          - name: HOME
+            value: /config
+          - name: LSIO_FIRST_PARTY
+            value: "true"
+          - name: PATH
+            value: /lsiopy/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+          - name: PGID
+            value: "100"
+          - name: PS1
+            value: $(whoami)@$(hostname):$(pwd)\$
+          - name: PUID
+            value: "1000"
+          - name: PYTHONIOENCODING
+            value: UTF-8
+          - name: S6_CMD_WAIT_FOR_SERVICES_MAXTIME
+            value: "0"
+          - name: S6_STAGE2_HOOK
+            value: /docker-mods
+          - name: S6_VERBOSITY
+            value: "1"
+          - name: TERM
+            value: xterm
+          - name: VIRTUAL_ENV
+            value: /lsiopy
+          - name: XDG_CONFIG_HOME
+            value: /config/xdg
+          volumeMounts:
+          - name: sickchill-config
+            mountPath: /config
+          - name: downloads
+            mountPath: /downloads
+          - name: tv
+            mountPath: /tv
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      volumes:
+      - name: sickchill-config
+        hostPath:
+          path: /portainer/Files/AppData/Config/SickChill
+          type: Directory
+      - name: radarr-config
+        hostPath:
+          path: /portainer/Files/AppData/Config/Radarr
+          type: Directory
+      - name: rutorrent-config
+        hostPath:
+          path: /portainer/Files/AppData/Config/ruTorrent/config
+          type: Directory
+      - name: plex-config
+        hostPath:
+          path: /portainer/Files/AppData/Config/Plex
+          type: Directory
+      - name: passwd
+        hostPath:
+          path: /portainer/Files/AppData/Config/ruTorrent/passwd
+          type: Directory
+      - name: downloads
+        hostPath:
+          path: /mnt/media/downloads
+          type: Directory
+      - name: data
+        hostPath:
+          path: /mnt/media/data
+          type: Directory
+      - name: tv
+        hostPath:
+          path: /mnt/media/library/tv
+          type: Directory
+      - name: movies
+        hostPath:
+          path: /mnt/media/library/movies
+          type: Directory
