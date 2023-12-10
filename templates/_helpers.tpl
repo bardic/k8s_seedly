@@ -48,6 +48,7 @@ Selector labels
 {{- define "seedly.selectorLabels" -}}
 app.kubernetes.io/name: {{ include "seedly.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
+type: runner
 {{- end }}
 
 {{/*

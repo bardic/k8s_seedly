@@ -5,28 +5,28 @@
 replicaCount: 1
 
 plex:
-  repository: lscr.io/linuxserver/plex:latest
+  repository: linuxserver/plex
   pullPolicy: Always
   # Overrides the image tag whose default is the chart appVersion.
-  tag: ""
+  tag: "latest"
 
 rtorrent:
-  repository: crazymax/rtorrent-rutorrent:latest
+  repository: crazymax/rtorrent-rutorrent
   pullPolicy: Always
   # Overrides the image tag whose default is the chart appVersion.
-  tag: ""
+  tag: "latest"
 
 radarr:
-  repository: linuxserver/radarr:latest
+  repository: linuxserver/radarr
   pullPolicy: Always
   # Overrides the image tag whose default is the chart appVersion.
-  tag: ""
+  tag: "latest"
 
 sickchill:
-  repository: 	linuxserver/sickchill:latest
+  repository: 	linuxserver/sickchill
   pullPolicy: Always
   # Overrides the image tag whose default is the chart appVersion.
-  tag: ""
+  tag: "latest"
 
 imagePullSecrets: []
 nameOverride: ""
@@ -55,9 +55,33 @@ securityContext: {}
   # runAsUser: 1000
 
 service:
-  type: ClusterIP
-  port: 80
-
+  type: LoadBalancer
+  ports:
+  - name: plex
+    port: 32400
+    targetPort: 32400
+  - name: radarr
+    port: 7878
+    targetPort: 7878
+  - name: sickchill
+    port: 8081
+    targetPort: 8081
+  - name: rtorrent1
+    port: 8001
+    targetPort: 8000
+  - name: rtorrent2
+    port: 8080
+    targetPort: 8080
+  - name: rtorrent3
+    port: 9001
+    targetPort: 9000
+  - name: rtorrent4
+    port: 50000
+    targetPort: 50000
+  - name: rtorrent5 
+    port: 6881
+    targetPort: 6881
+    
 ingress:
   enabled: false
   className: ""

@@ -85,12 +85,12 @@ spec:
           - name: VIRTUAL_ENV
             value: /lsiopy
           volumeMounts:
-          - name: plex-config
-            mountPath: /config
-          - name: movies
-            mountPath: /movies
-          - name: tv
-            mountPath: /tv
+          - mountPath: /config
+            name: plex-config
+          - mountPath: /movies
+            name: movies
+          - mountPath: /tv
+            name: tv
         - name: "rtorrent"
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
@@ -122,14 +122,14 @@ spec:
           - name: TZ
             value: America/Halifax
           volumeMounts:
-          - name: rutorrent-config
-            mountPath: /config
-          - name: data
-            mountPath: /data
-          - name: downloads
-            mountPath: /downloads 
-          - name: passwd
-            mountPath: /passwd
+          - mountPath: /config
+            name: rutorrent-config
+          - mountPath: /data
+            name: data
+          - mountPath: /downloads
+            name: downloads 
+          - mountPath: /passwd
+            name: passwd
         - name: "radarr"
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
@@ -165,12 +165,12 @@ spec:
           - name: XDG_CONFIG_HOME
             value: /config/xdg
           volumeMounts:
-          - name: radarr-config
-            mountPath: /config
-          - name: downloads
-            mountPath: /downloads
-          - name: movies
-            mountPath: /movies
+          - mountPath: /config
+            name: radarr-config
+          - mountPath: /downloads
+            name: downloads
+          - mountPath: /movies
+            name: movies
         - name: "sickchill"
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
@@ -208,12 +208,12 @@ spec:
           - name: XDG_CONFIG_HOME
             value: /config/xdg
           volumeMounts:
-          - name: sickchill-config
-            mountPath: /config
-          - name: downloads
-            mountPath: /downloads
-          - name: tv
-            mountPath: /tv
+          - mountPath: /config
+            name: sickchill-config
+          - mountPath: /downloads
+            name: downloads
+          - mountPath: /tv
+            name: tv
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
@@ -229,37 +229,28 @@ spec:
       volumes:
       - name: sickchill-config
         hostPath:
-          path: /portainer/Files/AppData/Config/SickChill
-          type: Directory
+          path: /mnt/media/config/SickChill
       - name: radarr-config
         hostPath:
-          path: /portainer/Files/AppData/Config/Radarr
-          type: Directory
+          path: /mnt/media/config/Radarr
       - name: rutorrent-config
         hostPath:
-          path: /portainer/Files/AppData/Config/ruTorrent/config
-          type: Directory
+          path: /mnt/media/config/ruTorrent/config
       - name: plex-config
         hostPath:
-          path: /portainer/Files/AppData/Config/Plex
-          type: Directory
+          path: /mnt/media/config/Plex
       - name: passwd
         hostPath:
-          path: /portainer/Files/AppData/Config/ruTorrent/passwd
-          type: Directory
+          path: /mnt/media/config/ruTorrent/passwd
       - name: downloads
         hostPath:
           path: /mnt/media/downloads
-          type: Directory
       - name: data
         hostPath:
           path: /mnt/media/data
-          type: Directory
       - name: tv
         hostPath:
           path: /mnt/media/library/tv
-          type: Directory
       - name: movies
         hostPath:
           path: /mnt/media/library/movies
-          type: Directory
