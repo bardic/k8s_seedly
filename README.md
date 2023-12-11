@@ -3,6 +3,9 @@
 ## Media Management
 
 Plex
+
 rTorrent + ruTorrent
+
 SickChill
+
 Radarr
